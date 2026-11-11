@@ -69,14 +69,14 @@ button.b.armed{background:var(--glow);color:#1a1400;border-color:var(--glow)}
 <div class="score" id="score" style="margin-top:12px"></div>
 <div class="rules w">
   <b>Round:</b> the game picks a glowing board. X plays one move, then O replies in the same board. Then the game jumps to another random board. Win a small board to claim that big cell. <b>Two ways to win:</b> <b>SUPER BIG WIN</b> means you claim three big cells in a row, at any time. <b>BIG WIN</b> means every board was decided first and you hold more big cells.<br>
-  <b>EP:</b> both players gain 1 EP at the end of every round (max 5). You may use <b>one buff per round</b>, before your move.<br>
-  <b>Convert (2 EP):</b> only while you are behind in big cells. Flip one enemy mark in the glowing board into yours.<br>
+  <b>EP:</b> both players gain 1 EP at the end of every round (max 10). You may use <b>one buff per round</b>, before your move.<br>
+  <b>Convert (4 EP):</b> flip one enemy mark in the glowing board into yours.<br>
   <b>Redirect (2 EP):</b> choose which board the next round is played in.<br>
-  <b>Claim (4 EP):</b> a full board with no winner shows TIE. Claim that big cell for yourself.
+  <b>Claim (10 EP, ultimate):</b> a full board with no winner shows TIE. Claim that big cell for yourself.
 </div>
 <script>
 const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-const COST={convert:2,redirect:2,claim:4},LBL={convert:'Convert',redirect:'Redirect',claim:'Claim'};
+const COST={convert:4,redirect:2,claim:10},LBL={convert:'Convert',redirect:'Redirect',claim:'Claim'};
 const OPP=p=>p==='X'?'O':'X';
 let small,big,turn,active,over,result,kind,busy=false,mode='ai',diff='easy',ep,used,armed,nextB,wins={X:0,O:0};
 const $=id=>document.getElementById(id);
@@ -112,13 +112,13 @@ function checkEnd(){
   return over;
 }
 function endRound(b){
-  ep.X=Math.min(5,ep.X+1);ep.O=Math.min(5,ep.O+1);
+  ep.X=Math.min(10,ep.X+1);ep.O=Math.min(10,ep.O+1);
   used={X:false,O:false};armed=null;turn='X';
   active=pickNext(b);
 }
 function can(k,p){
   if(over||used[p]||ep[p]<COST[k])return false;
-  if(k==='convert')return count(p)<count(OPP(p))&&small[active].includes(OPP(p));
+  if(k==='convert')return small[active].includes(OPP(p));
   if(k==='redirect')return playable().some(i=>i!==active);
   return big.includes('D');
 }
@@ -173,9 +173,9 @@ function aiTurn(){
 }
 function hud(p){
   const nm=mode==='ai'?(p==='X'?'YOU':'CPU'):'P'+(p==='X'?1:2);
-  let pips='';for(let i=0;i<5;i++)pips+=`<div class="pip${i<ep[p]?' f':''}"></div>`;
+  let pips='';for(let i=0;i<10;i++)pips+=`<div class="pip${i<ep[p]?' f':''}"></div>`;
   $('h'+p).className='pl'+(!over&&turn===p?' on':'');
-  $('h'+p).innerHTML=`<div class="nm ${p}">${p} ${nm}</div><div class="pips">${pips}</div><div class="meta">EP ${ep[p]}/5 · Cells ${count(p)}</div>`;
+  $('h'+p).innerHTML=`<div class="nm ${p}">${p} ${nm}</div><div class="pips">${pips}</div><div class="meta">EP ${ep[p]}/10 · Cells ${count(p)}</div>`;
 }
 function render(){
   const hum=humanTurn(),opp=OPP(turn);

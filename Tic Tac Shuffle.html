@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tic Tac Shuffle</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+:root{--bg:#222d78;--panel:#34429e;--cell:#2a3788;--edge:#6d7ff0;--text:#ffffff;--muted:#c3ccff;--x:#ff6b81;--o:#5cc8ff;--glow:#ffd84a;--ep:#37e6a0;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+.px{font-family:"Press Start 2P",ui-monospace,Menlo,monospace}
+body{margin:0;min-height:100vh;color:var(--text);background:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px) 0 0/100% 4px,radial-gradient(circle at 50% -10%,#6a7dff,var(--bg) 65%);background-color:var(--bg);font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;display:flex;flex-direction:column;align-items:center;padding:14px 10px 30px}
+h1{font:clamp(14px,4.6vw,22px)/1.3 "Press Start 2P",monospace;margin:6px 0 12px;text-shadow:2px 2px 0 var(--x),4px 4px 0 var(--o);letter-spacing:.04em}
+.w{width:min(96vw,520px)}
+.hud{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:10px}
+.vs{font:10px "Press Start 2P",monospace;color:var(--muted)}
+.pl{background:var(--panel);border:2px solid var(--edge);border-radius:6px;padding:8px 10px}
+.pl.on{border-color:var(--glow);box-shadow:0 0 14px rgba(255,216,74,.45)}
+.nm{font:10px "Press Start 2P",monospace;margin-bottom:7px}
+.nm.X{color:var(--x)} .nm.O{color:var(--o)}
+.pips{display:flex;gap:3px;margin-bottom:5px}
+.pip{flex:1;height:8px;background:#4a5ac4;border-radius:2px}
+.pip.f{background:var(--ep);box-shadow:0 0 6px var(--ep)}
+.meta{font-size:11px;color:var(--muted)}
+.status{min-height:42px;text-align:center;font-size:12px;margin:2px 0 8px}
+.buffs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;min-height:34px}
+button.b{font:9px/1.4 "Press Start 2P",monospace;color:var(--text);background:var(--panel);border:2px solid var(--edge);border-radius:4px;padding:9px 10px;cursor:pointer;box-shadow:0 3px 0 #05081a}
+button.b:hover:not(:disabled){border-color:var(--glow)}
+button.b:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 #05081a}
+button.b:disabled{opacity:.35;cursor:default}
+button.b.armed{background:var(--glow);color:#1a1400;border-color:var(--glow)}
+.big{aspect-ratio:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px;background:#3f50c0;border:3px solid #9aa8ff;border-radius:8px;box-shadow:0 0 28px rgba(140,160,255,.5)}
+.sb{position:relative;background:var(--panel);border:2px solid var(--edge);border-radius:5px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:3px;transition:opacity .2s}
+.sb.dim{opacity:.5}
+.sb.active{border-color:var(--glow);box-shadow:0 0 16px 2px rgba(255,216,74,.6);z-index:1;animation:pick .4s ease-out}
+.sb.next::after{content:"NEXT";position:absolute;top:-9px;right:-4px;z-index:3;font:7px "Press Start 2P",monospace;background:var(--ep);color:#04281c;padding:3px 4px;border-radius:3px}
+.sb.target{border-color:var(--ep);border-style:dashed;cursor:pointer;opacity:1;animation:blink 1s infinite}
+.sb.target .c{cursor:pointer}
+@keyframes pick{0%{transform:scale(.93)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes blink{50%{box-shadow:0 0 12px var(--ep)}}
+.c{font:clamp(14px,4.6vw,26px)/1 "Press Start 2P",monospace;border:1px solid var(--edge);background:var(--cell);border-radius:3px;padding:0;color:var(--text);display:grid;place-items:center;cursor:default}
+.c.X{color:var(--x);text-shadow:0 0 8px var(--x)} .c.O{color:var(--o);text-shadow:0 0 8px var(--o)}
+.sb.active .c:not(.X):not(.O):not(:disabled){cursor:pointer}
+.sb.active .c:not(.X):not(.O):not(:disabled):hover{background:#3d4eb4}
+.big.cv .sb.active .c:not(:disabled){outline:2px dashed var(--glow);outline-offset:-3px;cursor:pointer}
+.c:focus-visible{outline:2px solid var(--glow)}
+.won{position:absolute;inset:0;display:grid;place-items:center;border-radius:4px;font:700 clamp(36px,13vw,72px)/1 "Press Start 2P",monospace;background:rgba(34,45,120,.93)}
+.won.X{color:var(--x);text-shadow:0 0 18px var(--x)} .won.O{color:var(--o);text-shadow:0 0 18px var(--o)}
+.won.D{color:var(--muted);font-size:clamp(12px,3.6vw,18px)}
+.bar{display:flex;gap:10px;margin-top:16px;align-items:center;flex-wrap:wrap;justify-content:center}
+.score{font-size:11px;color:var(--muted)}
+.rules{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.7}
+.rules b{color:var(--text)}
+@media (prefers-reduced-motion:reduce){.sb.active,.sb.target{animation:none}}
+</style>
+</head>
+<body>
+<h1>TIC TAC SHUFFLE</h1>
+<div class="hud w"><div class="pl" id="hX"></div><div class="vs">VS</div><div class="pl" id="hO"></div></div>
+<div class="status w" id="status"></div>
+<div class="buffs w" id="buffs"></div>
+<div class="big w" id="big" role="grid" aria-label="Big board"></div>
+<div class="bar">
+  <button class="b" id="diff">Level: Easy</button>
+  <button class="b" id="mode">Mode: vs CPU</button>
+  <button class="b" id="reset">New game</button>
+</div>
+<div class="score" id="score" style="margin-top:12px"></div>
+<div class="rules w">
+  <b>Round:</b> the game picks a glowing board. X plays one move, then O replies in the same board. Then the game jumps to another random board. Win a small board to claim that big cell. <b>Two ways to win:</b> <b>SUPER BIG WIN</b> means you claim three big cells in a row, at any time. <b>BIG WIN</b> means every board was decided first and you hold more big cells.<br>
+  <b>EP:</b> both players gain 1 EP at the end of every round (max 5). You may use <b>one buff per round</b>, before your move.<br>
+  <b>Convert (2 EP):</b> only while you are behind in big cells. Flip one enemy mark in the glowing board into yours.<br>
+  <b>Redirect (2 EP):</b> choose which board the next round is played in.<br>
+  <b>Claim (4 EP):</b> a full board with no winner shows TIE. Claim that big cell for yourself.
+</div>
+<script>
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const COST={convert:2,redirect:2,claim:4},LBL={convert:'Convert',redirect:'Redirect',claim:'Claim'};
+const OPP=p=>p==='X'?'O':'X';
+let small,big,turn,active,over,result,kind,busy=false,mode='ai',diff='easy',ep,used,armed,nextB,wins={X:0,O:0};
+const $=id=>document.getElementById(id);
+
+function winner(a){for(const [p,q,r] of LINES){if(a[p]&&a[p]!=='D'&&a[p]===a[q]&&a[p]===a[r])return a[p]}return null}
+const count=p=>big.filter(v=>v===p).length;
+const playable=()=>{const r=[];for(let i=0;i<9;i++)if(big[i]===null)r.push(i);return r};
+const humanTurn=()=>!over&&!busy&&(mode==='two'||turn==='X');
+
+function init(){
+  small=Array.from({length:9},()=>Array(9).fill(null));
+  big=Array(9).fill(null);turn='X';over=false;result=null;kind=null;busy=false;
+  ep={X:1,O:1};used={X:false,O:false};armed=null;nextB=null;
+  active=Math.floor(Math.random()*9);
+  render();
+}
+function pickNext(cur){
+  const n=nextB;nextB=null;
+  if(n!==null&&big[n]===null)return n;
+  const p=playable(),o=p.filter(i=>i!==cur),pool=o.length?o:p;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function settle(b){
+  const w=winner(small[b]);
+  if(w)big[b]=w;else if(small[b].every(Boolean))big[b]='D';
+  return big[b]!==null;
+}
+function checkEnd(){
+  const bw=winner(big);
+  if(bw){result=bw;kind='line'}
+  else if(!playable().length){const x=count('X'),o=count('O');result=x>o?'X':o>x?'O':'D';kind='count'}
+  if(result){over=true;active=null;armed=null;if(result!=='D')wins[result]++}
+  return over;
+}
+function endRound(b){
+  ep.X=Math.min(5,ep.X+1);ep.O=Math.min(5,ep.O+1);
+  used={X:false,O:false};armed=null;turn='X';
+  active=pickNext(b);
+}
+function can(k,p){
+  if(over||used[p]||ep[p]<COST[k])return false;
+  if(k==='convert')return count(p)<count(OPP(p))&&small[active].includes(OPP(p));
+  if(k==='redirect')return playable().some(i=>i!==active);
+  return big.includes('D');
+}
+function spend(k){used[turn]=true;ep[turn]-=COST[k];armed=null}
+function doConvert(b,c){
+  spend('convert');small[b][c]=turn;
+  if(settle(b)&&!checkEnd())endRound(b);
+  render();
+}
+function doRedirect(b){spend('redirect');nextB=b;render()}
+function doClaim(b){spend('claim');big[b]=turn;checkEnd();render()}
+function place(b,c){
+  small[b][c]=turn;
+  const closed=settle(b);
+  if(checkEnd()){}
+  else if(turn==='X'&&!closed)turn='O';
+  else endRound(b);
+  render();
+  if(!over&&mode==='ai'&&turn==='O'){busy=true;render();setTimeout(()=>{busy=false;aiTurn()},750)}
+}
+function useBuff(k){
+  if(!humanTurn()||!can(k,turn))return;
+  armed=armed===k?null:k;render();
+}
+function aiTurn(){
+  if(over||turn!=='O')return;
+  const p={easy:.2,normal:.5,hard:.9}[diff],t=Math.random()<p;
+  if(t&&can('claim','O'))doClaim(big.indexOf('D'));
+  else if(t&&can('convert','O')){
+    const xs=[];small[active].forEach((v,i)=>{if(v==='X')xs.push(i)});
+    let c=xs.find(i=>{small[active][i]='O';const w=winner(small[active])==='O';small[active][i]='X';return w});
+    if(c===undefined)c=xs[Math.floor(Math.random()*xs.length)];
+    doConvert(active,c);
+  }else if(t&&can('redirect','O')){
+    const cand=playable().filter(i=>i!==active).sort((a,b)=>small[a].filter(Boolean).length-small[b].filter(Boolean).length).reverse();
+    spend('redirect');nextB=cand[0];
+  }
+  if(over||turn!=='O'){render();return}
+  const b=active,cells=[];for(let i=0;i<9;i++)if(!small[b][i])cells.push(i);
+  const tryLine=q=>{for(const c of cells){small[b][c]=q;const w=winner(small[b])===q;small[b][c]=null;if(w)return c}return null};
+  const P={easy:{win:.3,block:0,smart:0},normal:{win:.75,block:.5,smart:.4},hard:{win:1,block:1,smart:1}}[diff];
+  let c=null;
+  if(Math.random()<P.win)c=tryLine('O');
+  if(c===null&&Math.random()<P.block)c=tryLine('X');
+  if(c===null){
+    const k=cells.filter(i=>[0,2,6,8].includes(i));
+    if(Math.random()<P.smart&&cells.includes(4))c=4;
+    else if(Math.random()<P.smart&&k.length)c=k[Math.floor(Math.random()*k.length)];
+    else c=cells[Math.floor(Math.random()*cells.length)];
+  }
+  place(b,c);
+}
+function hud(p){
+  const nm=mode==='ai'?(p==='X'?'YOU':'CPU'):'P'+(p==='X'?1:2);
+  let pips='';for(let i=0;i<5;i++)pips+=`<div class="pip${i<ep[p]?' f':''}"></div>`;
+  $('h'+p).className='pl'+(!over&&turn===p?' on':'');
+  $('h'+p).innerHTML=`<div class="nm ${p}">${p} ${nm}</div><div class="pips">${pips}</div><div class="meta">EP ${ep[p]}/5 · Cells ${count(p)}</div>`;
+}
+function render(){
+  const hum=humanTurn(),opp=OPP(turn);
+  hud('X');hud('O');
+  $('big').innerHTML='';$('big').classList.toggle('cv',armed==='convert');
+  for(let b=0;b<9;b++){
+    const sb=document.createElement('div');
+    let cls='sb';
+    if(b===active)cls+=' active';else if(!over&&big[b]===null)cls+=' dim';
+    if(b===nextB&&big[b]===null)cls+=' next';
+    if(hum&&((armed==='redirect'&&big[b]===null&&b!==active)||(armed==='claim'&&big[b]==='D')))cls+=' target';
+    sb.className=cls;
+    sb.onclick=()=>{
+      if(!humanTurn())return;
+      if(armed==='redirect'&&big[b]===null&&b!==active)doRedirect(b);
+      else if(armed==='claim'&&big[b]==='D')doClaim(b);
+    };
+    for(let c=0;c<9;c++){
+      const v=small[b][c],btn=document.createElement('button');
+      btn.className='c'+(v?' '+v:'');btn.textContent=v||'';
+      btn.setAttribute('aria-label',`Board ${b+1}, cell ${c+1}${v?', '+v:''}`);
+      btn.disabled=!hum||(armed==='convert'?(b!==active||v!==opp):armed?false:(b!==active||!!v));
+      btn.onclick=()=>{
+        if(!humanTurn()||b!==active)return;
+        if(armed==='convert'){if(v===opp)doConvert(b,c)}
+        else if(!armed&&!v)place(b,c);
+      };
+      sb.appendChild(btn);
+    }
+    if(big[b]){const w=document.createElement('div');w.className='won '+big[b];w.textContent=big[b]==='D'?'TIE':big[b];sb.appendChild(w)}
+    $('big').appendChild(sb);
+  }
+  const hints={convert:' Pick an enemy mark to flip.',redirect:' Pick the next board.',claim:' Pick a TIE board to claim.'};
+  $('status').textContent=over?(result==='D'?'DRAW GAME!':`${result} ${kind==='line'?'SUPER BIG WIN! 3 in a row':'BIG WIN! Most big cells'}`):
+    mode==='ai'&&turn==='O'?(busy?'CPU is thinking…':'CPU turn'):`${turn} turn.${hints[armed]||' Play in the glowing board.'}`;
+  const bf=$('buffs');bf.innerHTML='';bf.style.visibility=hum?'visible':'hidden';
+  for(const k of ['convert','redirect','claim']){
+    const e=document.createElement('button');
+    e.className='b'+(armed===k?' armed':'');
+    e.textContent=`${LBL[k]} ${COST[k]}EP`;
+    e.disabled=!hum||!can(k,turn);
+    e.onclick=()=>useBuff(k);
+    bf.appendChild(e);
+  }
+  $('score').textContent=`Wins  X: ${wins.X}   O: ${wins.O}`;
+}
+const LV={easy:'Easy',normal:'Normal',hard:'Hard'},ORDER=['easy','normal','hard'];
+$('reset').onclick=init;
+$('diff').onclick=()=>{diff=ORDER[(ORDER.indexOf(diff)+1)%3];$('diff').textContent='Level: '+LV[diff]};
+$('mode').onclick=e=>{mode=mode==='ai'?'two':'ai';e.target.textContent=mode==='ai'?'Mode: vs CPU':'Mode: 2 Players';$('diff').style.display=mode==='ai'?'':'none';wins={X:0,O:0};init()};
+init();
+</script>
+</body>
+</html>
